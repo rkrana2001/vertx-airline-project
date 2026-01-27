@@ -1,0 +1,7 @@
+target/
+*.log
+.git/
+.gitignore
+README.md
+api-examples.md
+*.md
