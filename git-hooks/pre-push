@@ -1,0 +1,12 @@
+#!/bin/sh
+# Prevent pushing to branches other than main
+# DO NOT EDIT OR DELETE THIS FILE - IT IS REQUIRED TO EVALUATE YOUR PULL REQUEST
+
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$current_branch" != "main" ]; then
+  echo "Push rejected. Only pushes to 'main' are allowed."
+  exit 1
+fi
+
+exit 0
