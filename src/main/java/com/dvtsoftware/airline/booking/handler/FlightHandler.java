@@ -57,7 +57,7 @@ public class FlightHandler {
                 })
                 .onFailure(err -> {
                     err.printStackTrace();
-                    rc.fail(new HttpException(500, "Database error: " + err.getMessage()));
+                    rc.fail(new HttpException(409, "Database error: " + err.getMessage()));
                 });
     }
 

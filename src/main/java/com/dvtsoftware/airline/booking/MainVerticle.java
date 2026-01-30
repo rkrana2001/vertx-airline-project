@@ -5,14 +5,11 @@ import com.dvtsoftware.airline.booking.handler.BookingHandler;
 import com.dvtsoftware.airline.booking.handler.FlightHandler;
 import com.dvtsoftware.airline.booking.handler.PassengerHandler;
 import com.dvtsoftware.airline.booking.service.DatabaseService;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.core.json.jackson.DatabindCodec;
+import com.dvtsoftware.airline.booking.handler.GlobalFailureHandler;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -50,6 +47,8 @@ public class MainVerticle extends AbstractVerticle {
                     router.get("/bookings/:id").handler(bookingHandler::retrieveBookingDetails);
                     router.delete("/bookings/:id").handler(bookingHandler::cancelBooking);
                     router.get("/passengers/:id/bookings").handler(bookingHandler::listPassengerBookings);
+
+                    router.route().failureHandler(GlobalFailureHandler::handle);
 
                     vertx.createHttpServer()
                             .requestHandler(router)
