@@ -10,9 +10,9 @@ DROP TABLE IF EXISTS airlines;
 -- Create Airlines table
 CREATE TABLE airlines (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(10) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
-    country VARCHAR(50) NOT NULL,
+    code VARCHAR(10) NOT NULL UNIQUE,
+    country VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -33,8 +33,9 @@ CREATE TABLE flights (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (airline_id) REFERENCES airlines(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_flight (flight_number, departure_time)
+    CONSTRAINT unique_flight UNIQUE (flight_number, departure_time)
 );
+
 
 -- Create Passengers table
 CREATE TABLE passengers (
