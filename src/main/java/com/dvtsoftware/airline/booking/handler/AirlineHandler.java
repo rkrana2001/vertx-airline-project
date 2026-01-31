@@ -14,7 +14,6 @@ import io.vertx.sqlclient.Tuple;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-
 public class AirlineHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AirlineHandler.class);
@@ -29,35 +28,31 @@ public class AirlineHandler {
         JsonObject body = rc.body().asJsonObject();
 
         // 1. Validation
-        if (body == null || !body.containsKey("name") || !body.containsKey("code")) {
+        if (body == null || body.getString("name") == null || body.getString("code") == null) {
             rc.fail(new HttpException(400, "Missing fields: name, code"));
             return;
         }
 
-        // 2. Map JSON to Model
+        // 2. Create record (id = null initially)
         Airline airline = new Airline(null, body.getString("name"), body.getString("code"),
                 body.getString("country", "Unknown"));
 
-        // 3. Execute Async Database Query directly
+        // 3. Insert into DB
         dbService.getPool().preparedQuery("INSERT INTO airlines (name, code, country) VALUES (?, ?, ?)")
-                .execute(Tuple.of(airline.getName(), airline.getCode(), airline.getCountry())).onSuccess(rows -> {
-                    // H2/JDBC Client returns the generated keys in the 'rows' object
-                    // but we need to extract the ID specifically.
+                .execute(Tuple.of(airline.name(), airline.code(), airline.country())).onSuccess(rows -> {
                     Long generatedId = rows.property(JDBCPool.GENERATED_KEYS).getLong(0);
 
-                    airline.setId(generatedId); // Set the ID back into your object
+                    // 4. Create NEW Airline with ID
+                    Airline saved = new Airline(generatedId, airline.name(), airline.code(), airline.country());
 
                     rc.response().setStatusCode(201).putHeader("Content-Type", "application/json")
-                            .end(Json.encodePrettily(airline));
+                            .end(Json.encodePrettily(saved));
                 }).onFailure(err -> {
-                    LOG.error("Registration failed", err);
-                    rc.fail(new HttpException(500, "Database error: " + err.getMessage()));
+                    rc.fail(new HttpException(409, "Failed to create airline"));
                 });
     }
 
-
     public void listAllAirlines(RoutingContext rc) {
-        // Keep it simple - H2 will treat these as ID, NAME, etc.
         String sql = "SELECT id, name, code, country FROM airlines ORDER BY name";
 
         dbService.getPool().query(sql).execute()
@@ -65,9 +60,46 @@ public class AirlineHandler {
                         .collect(Collectors.toList())).onSuccess(
                         list -> rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list)))
                 .onFailure(err -> {
-                    LOG.error("Retrieval failed", err);
-                    //err.printStackTrace();
-                    rc.fail(new HttpException(500, "Failed to retrieve airlines."));
+                    rc.fail(new HttpException(500, "Failed to retrieve airlines"));
+                });
+    }
+
+    public void searchAirlines(RoutingContext rc) {
+
+        String id = rc.request().getParam("id");
+        String name = rc.request().getParam("name");
+        String code = rc.request().getParam("code");
+        String country = rc.request().getParam("country");
+
+        StringBuilder sql = new StringBuilder("SELECT id, name, code, country FROM airlines WHERE 1=1");
+
+        Tuple params = Tuple.tuple();
+
+        if (id != null) {
+            sql.append(" AND id = ?");
+            params.addLong(Long.parseLong(id));
+        }
+        if (name != null) {
+            sql.append(" AND LOWER(name) LIKE ?");
+            params.addString("%" + name.toLowerCase() + "%");
+        }
+        if (code != null) {
+            sql.append(" AND LOWER(code) LIKE ?");
+            params.addString("%" + code.toLowerCase() + "%");
+        }
+        if (country != null) {
+            sql.append(" AND LOWER(country) LIKE ?");
+            params.addString("%" + country.toLowerCase() + "%");
+        }
+
+        sql.append(" ORDER BY name");
+
+        dbService.getPool().preparedQuery(sql.toString()).execute(params)
+                .map(rows -> StreamSupport.stream(rows.spliterator(), false).map(Airline::fromRow)
+                        .collect(Collectors.toList())).onSuccess(
+                        list -> rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list)))
+                .onFailure(err -> {
+                    rc.fail(new HttpException(500, "Failed to search airlines"));
                 });
     }
 

@@ -16,7 +16,7 @@
         <h2.version>2.3.232</h2.version>
     </properties>
 
-    <!-- 🔥 CRITICAL: Vert.x BOM -->
+    <!-- CRITICAL: Vert.x BOM -->
     <dependencyManagement>
         <dependencies>
             <dependency>

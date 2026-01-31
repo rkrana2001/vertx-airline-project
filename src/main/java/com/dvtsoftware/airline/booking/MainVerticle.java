@@ -29,6 +29,7 @@ public class MainVerticle extends AbstractVerticle {
                     var airlineHandler = new AirlineHandler(dbService);
                     router.post("/airlines").handler(airlineHandler::addAirline);
                     router.get("/airlines").handler(airlineHandler::listAllAirlines);
+                    router.get("/airlines/search").handler(airlineHandler::searchAirlines);
 
                     var flightHandler = new FlightHandler(dbService);
                     router.post("/flights").handler(flightHandler::addFlight);
