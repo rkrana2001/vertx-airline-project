@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 target/
 *.log
 .git/
@@ -5,3 +6,7 @@ target/
 README.md
 api-examples.md
 *.md
+=======
+target
+*.log
+>>>>>>> aa04445 (first Commit)

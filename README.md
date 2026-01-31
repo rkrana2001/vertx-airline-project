@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # DVT's Airline Booking System - Vert.x Technical Assessment
 
 ## Overview
@@ -346,3 +347,9 @@ This assessment is more than a coding exercise. It is your opportunity to demons
 **Your mission**: Build a system that can handle a million flight bookings. Show us you're ready for the challenge!
 
 **Happy Coding! Ready when you are. Let's build something amazing!**
+=======
+Vert.x Airline Booking - skeleton
+Run:
+ mvn clean package
+ java -jar target/vertx-airline-booking-1.0.0-SNAPSHOT-shaded.jar
+>>>>>>> aa04445 (first Commit)
