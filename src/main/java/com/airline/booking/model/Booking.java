@@ -12,8 +12,8 @@ public record Booking(
         String status,
         Double totalAmount // Added field
 ) {
-  public static Booking fromRow(Row r) {
-    return new Booking(
+  public static com.airline.booking.model.Booking fromRow(Row r) {
+    return new com.airline.booking.model.Booking(
             r.getLong("ID"),
             r.getString("BOOKING_REFERENCE"),
             r.getLong("PASSENGER_ID"),

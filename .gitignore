@@ -92,9 +92,13 @@ $RECYCLE.BIN/
 .nfs*
 
 # Logs
-*.log
-logs/
-log/
+ *.log
+ logs/
+ log/
+ *.log.*
+
+ # Vulnerability Scanning Reports
+ dependency-check-report.html
 
 # Runtime data
 pids

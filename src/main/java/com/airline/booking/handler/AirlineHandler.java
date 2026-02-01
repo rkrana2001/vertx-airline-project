@@ -1,11 +1,9 @@
 package com.airline.booking.handler;
 
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import com.airline.booking.model.Airline;
 import com.airline.booking.service.DatabaseService;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -13,9 +11,12 @@ import io.vertx.ext.web.handler.HttpException;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.Tuple;
 
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 public class AirlineHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AirlineHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(com.airline.booking.handler.AirlineHandler.class);
 
     private final DatabaseService dbService;
 
@@ -75,20 +76,27 @@ public class AirlineHandler {
         Tuple params = Tuple.tuple();
 
         if (id != null) {
-            sql.append(" AND id = ?");
-            params.addLong(Long.parseLong(id));
+            try {
+                params.addLong(Long.parseLong(id));
+                sql.append(" AND id = ?");
+            } catch (NumberFormatException e) {
+                rc.fail(new HttpException(400, "Invalid ID format: must be a number"));
+                return;
+            }
         }
-        if (name != null) {
+        if (name != null && !name.isBlank()) {
             sql.append(" AND LOWER(name) LIKE ?");
-            params.addString("%" + name.toLowerCase() + "%");
+            params.addString("%" + name.trim().toLowerCase() + "%");
         }
-        if (code != null) {
+
+        if (code != null && !code.isBlank()) {
             sql.append(" AND LOWER(code) LIKE ?");
-            params.addString("%" + code.toLowerCase() + "%");
+            params.addString("%" + code.trim().toLowerCase() + "%");
         }
-        if (country != null) {
+
+        if (country != null && !country.isBlank()) {
             sql.append(" AND LOWER(country) LIKE ?");
-            params.addString("%" + country.toLowerCase() + "%");
+            params.addString("%" + country.trim().toLowerCase() + "%");
         }
 
         sql.append(" ORDER BY name");
@@ -103,3 +111,4 @@ public class AirlineHandler {
     }
 
 }
+

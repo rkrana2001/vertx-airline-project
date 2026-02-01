@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.airline.booking.AirlineHandlerTest
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.464 s -- in com.airline.booking.AirlineHandlerTest

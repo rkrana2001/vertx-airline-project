@@ -9,8 +9,8 @@ public record Airline(Long id, String name, String code, String country) {
       throw new IllegalArgumentException("Airline name is required");
   }
 
-  public static Airline fromRow(Row row) {
-    return new Airline(
+  public static com.airline.booking.model.Airline fromRow(Row row) {
+    return new com.airline.booking.model.Airline(
             row.getLong("ID"),
             row.getString("NAME"),
             row.getString("CODE"),
@@ -18,3 +18,4 @@ public record Airline(Long id, String name, String code, String country) {
     );
   }
 }
+

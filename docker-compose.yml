@@ -1,0 +1,13 @@
+services:
+  airline-app:
+    build: .
+    container_name: airline-booking-service
+    ports:
+      - "8080:8080"
+    volumes:
+      # This maps your local folder to the exact path the error is looking for
+      - ./src/main/resources:/src/main/resources
+    environment:
+      DB_URL: jdbc:h2:mem:airline_booking;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      DB_USER: sa
+      DB_PASSWORD: ""

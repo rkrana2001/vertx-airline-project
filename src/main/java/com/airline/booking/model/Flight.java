@@ -6,15 +6,15 @@ public record Flight(
         Long id,
         Long airlineId,
         String flightNumber,
-        String origin,
-        String destination,
+        String from,
+        String to,
         String departure, // Change these to String
         String arrival,   // Change these to String
         Integer seatsAvailable,
         Double price
 ) {
-  public static Flight fromRow(Row r) {
-    return new Flight(
+  public static com.airline.booking.model.Flight fromRow(Row r) {
+    return new com.airline.booking.model.Flight(
             r.getLong("ID"),
             r.getLong("AIRLINE_ID"),
             r.getString("FLIGHT_NUMBER"),
