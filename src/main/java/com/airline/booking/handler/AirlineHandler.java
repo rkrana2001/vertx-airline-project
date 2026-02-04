@@ -44,10 +44,12 @@ public class AirlineHandler {
 
                     // 4. Create NEW Airline with ID
                     Airline saved = new Airline(generatedId, airline.name(), airline.code(), airline.country());
-
+                    LOG.info("Successfully added new airline: {} (Code: {}) with ID: {}",
+                            saved.name(), saved.code(), generatedId);
                     rc.response().setStatusCode(201).putHeader("Content-Type", "application/json")
                             .end(Json.encodePrettily(saved));
                 }).onFailure(err -> {
+                    LOG.error("Failed to create airline [{}]: {}", airline.code(), err.getMessage());
                     rc.fail(new HttpException(409, "Failed to create airline"));
                 });
     }
@@ -58,7 +60,10 @@ public class AirlineHandler {
         dbService.getPool().query(sql).execute()
                 .map(rows -> StreamSupport.stream(rows.spliterator(), false).map(Airline::fromRow)
                         .collect(Collectors.toList())).onSuccess(
-                        list -> rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list)))
+                        list -> {
+                            LOG.info("Successfully retrieved {} airlines", list.size());
+                            rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list));
+                        })
                 .onFailure(err -> {
                     rc.fail(new HttpException(500, "Failed to retrieve airlines"));
                 });
@@ -104,8 +109,12 @@ public class AirlineHandler {
         dbService.getPool().preparedQuery(sql.toString()).execute(params)
                 .map(rows -> StreamSupport.stream(rows.spliterator(), false).map(Airline::fromRow)
                         .collect(Collectors.toList())).onSuccess(
-                        list -> rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list)))
+                        list -> {
+                            LOG.info("Search query successful. Found {} airlines matching criteria.", list.size());
+                            rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list));
+                        })
                 .onFailure(err -> {
+                    LOG.error("Search failed: {}", err.getMessage());
                     rc.fail(new HttpException(500, "Failed to search airlines"));
                 });
     }

@@ -13,7 +13,6 @@ import io.vertx.sqlclient.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.HttpURLConnection;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -100,12 +99,15 @@ public class BookingHandler {
                                     .execute(Tuple.of(generatedId));
                         })
                         .map(rows -> rows.iterator().hasNext() ? Booking.fromRow(rows.iterator().next()) : null)
-        ).onSuccess(booking ->
-                rc.response()
-                        .setStatusCode(201)
-                        .putHeader("Content-Type", "application/json")
-                        .end(Json.encodePrettily(booking))
-        ).onFailure(rc::fail);
+        ).onSuccess(booking -> {
+            log.info("Booking successful: Ref [{}] for Passenger ID [{}] on Flight ID [{}]",
+                    booking.bookingReference(), booking.passengerId(), booking.flightId());
+
+            rc.response()
+                    .setStatusCode(201)
+                    .putHeader("Content-Type", "application/json")
+                    .end(Json.encodePrettily(booking));
+        }).onFailure(rc::fail);
     }
 
     // Other methods updated with uppercase column strings for H2 safety
@@ -130,8 +132,16 @@ public class BookingHandler {
                                 .compose(flightId ->
                                         conn.preparedQuery("UPDATE flights SET available_seats = available_seats + 1 WHERE id = ?")
                                                 .execute(Tuple.of(flightId)))
-                ).onSuccess(v -> rc.response().setStatusCode(204).end())
-                .onFailure(rc::fail);
+                ).onSuccess(v -> {
+                    log.info("Successfully cancelled booking ID: {}", bookingId);
+                    rc.response()
+                            .setStatusCode(204)
+                            .end();
+                })
+                .onFailure(err -> {
+                    log.error("Failed to cancel booking ID {}: {}", bookingId, err.getMessage());
+                    rc.fail(err);
+                });
     }
 
     public void retrieveBookingDetails(RoutingContext rc) {
@@ -151,8 +161,11 @@ public class BookingHandler {
                 .map(rows -> rows.iterator().hasNext() ? Booking.fromRow(rows.iterator().next()) : null)
                 .onSuccess(b -> {
                     if (b == null) {
+                        log.warn("Booking search: ID [{}] not found", id);
                         rc.fail(new HttpException(404, "Booking not found."));
                     } else {
+                        log.info("Successfully retrieved booking: Ref [{}] for Passenger ID [{}]",
+                                b.bookingReference(), b.passengerId());
                         rc.response()
                                 .putHeader("Content-Type", "application/json")
                                 .end(Json.encodePrettily(b));
@@ -166,7 +179,10 @@ public class BookingHandler {
         dbService.getPool().preparedQuery("SELECT * FROM Bookings WHERE passenger_id = ?").execute(Tuple.of(pid))
                 .map(rows -> StreamSupport.stream(rows.spliterator(), false).map(Booking::fromRow)
                         .collect(Collectors.toList()))
-                .onSuccess(list -> rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list)))
-                .onFailure(rc::fail);
+                .onSuccess(list ->{log.info("Retrieved {} bookings for Passenger ID: {}", list.size(), pid); rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list));})
+                .onFailure(err -> {
+                    log.error("Failed to list bookings for Passenger ID [{}]: {}", pid, err.getMessage());
+                    rc.fail(err);
+                });
     }
 }

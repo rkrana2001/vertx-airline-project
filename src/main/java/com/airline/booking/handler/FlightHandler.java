@@ -8,7 +8,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.sqlclient.Tuple;
 
-import java.net.HttpURLConnection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -61,11 +60,12 @@ public class FlightHandler {
         dbService.getPool().preparedQuery(sql).execute(params)
                 .onSuccess(rows -> {
                     Long generatedId = rows.property(io.vertx.jdbcclient.JDBCPool.GENERATED_KEYS).getLong(0);
+                    log.info("Flight successfully inserted into database. Generated ID: {}", generatedId);
                     fetchAndSendFlight(Math.toIntExact(generatedId), rc);
                 })
                 .onFailure(err -> {
                     log.error("Flight insertion failed", err);
-                    // Masking raw SQL error to avoid leakage
+                    log.error("Flight insertion failed for flight {}: {}", body.getString("flightNumber"), err.getMessage());
                     rc.fail(new HttpException(409, "Could not create flight. Check if airline exists or flight number is duplicate."));
                 });
     }
@@ -83,11 +83,16 @@ public class FlightHandler {
         dbService.getPool().preparedQuery("SELECT * FROM Flights WHERE id = ?").execute(Tuple.of(id))
                 .map(rows -> rows.iterator().hasNext() ? Flight.fromRow(rows.iterator().next()) : null)
                 .onSuccess(f -> {
-                    if (f == null) rc.fail(new HttpException(404, "Flight not found."));
-                    else rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(f));
-                })
+                    if (f == null) {
+                        log.warn("Flight fetch failed: ID {} not found", id);
+                        rc.fail(new HttpException(404, "Flight not found."));
+                    }else {
+                        log.info("Successfully retrieved flight details for ID: {}", id);
+                        rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(f));
+                    }})
                 .onFailure(err -> {
                     log.error("Fetch flight failed", err);
+                    log.error("Fetch flight failed for ID {}: {}", id, err.getMessage());
                     rc.fail(new HttpException(500, "Internal server error while fetching flight."));
                 });
     }

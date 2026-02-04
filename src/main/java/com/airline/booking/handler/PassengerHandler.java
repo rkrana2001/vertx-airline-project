@@ -61,9 +61,15 @@
               })
               .map(rows -> rows.iterator().hasNext() ? Passenger.fromRow(rows.iterator().next()) : null)
               .onSuccess(p -> {
-                if (p == null) rc.fail(new HttpException(500, "Passenger record not found after save."));
-                else rc.response().setStatusCode(201).putHeader("Content-Type", "application/json").end(Json.encodePrettily(p));
-              })
+                if (p == null) {
+                  log.error("Passenger record not found after save.");
+                  rc.fail(new HttpException(500, "Passenger record not found after save."));
+                }else {
+                  log.info("Successfully added new passenger: {} {} (ID: {})",
+                          p.firstName(), p.lastName(), p.id());
+                  rc.response().setStatusCode(201).putHeader("Content-Type", "application/json")
+                          .end(Json.encodePrettily(p));
+                }})
               .onFailure(rc::fail);
     }
 
@@ -96,12 +102,17 @@
                 rows.forEach(row -> list.add(Passenger.fromRow(row)));
                 return list;
               })
-              .onSuccess(list -> rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list)))
+              .onSuccess(list -> {
+                log.info("Passenger search successful. Found {} results.", list.size());
+                rc.response().putHeader("Content-Type", "application/json").end(Json.encodePrettily(list));
+              })
               .onFailure(err -> {
                 log.error("Passenger search failed", err);
+                log.error("Passenger search failed for query: {}", sql, err);
                 rc.fail(new HttpException(500, "Internal error during passenger search."));
               });
     }
+
     private boolean isInvalid(JsonObject body) {
       return !body.containsKey("name") || body.getString("name").isBlank() ||
               !body.containsKey("passportNumber") || body.getString("passportNumber").isBlank() ||
